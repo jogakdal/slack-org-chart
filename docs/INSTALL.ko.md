@@ -43,6 +43,8 @@ docker pull ghcr.io/jogakdal/slack-org-chart:latest
 3. App Name 입력 후 워크스페이스 선택
    - 권장 이름: `조직도` 또는 `조직명 + 조직도`
 4. **"Create App"** 클릭
+5. (선택) **"Basic Information"** → **"Display Information"** 에서 앱 아이콘을 등록합니다.
+   - 512x512px 이상의 PNG/JPG 권장
 
 ### 2-1. Bot User 설정
 
