@@ -8,19 +8,33 @@
 
 - 読み取り専用サービスアカウントがある **LDAP/ADサーバー**
 - アプリインストール権限がある **Slackワークスペース**
-- アプリを実行するマシンに **Python 3.9+**
 - アプリからLDAPサーバーとインターネット（Slack API）の両方にアクセス可能
 
-## Step 1. クローンとインストール
+## Step 1. アプリサーバーのインストール
+
+2つの方法から選択します。
+
+### 方法A: バイナリインストール（推奨）
+
+[Releases](https://github.com/jogakdal/slack-org-chart/releases) からOSに合ったパッケージをダウンロードします。Pythonのインストールは不要です。
 
 ```bash
-git clone <repository-url>
-cd org-chart
-
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+tar xzf slack-org-chart-linux.tar.gz   # Linux
+tar xzf slack-org-chart-macos.tar.gz   # macOS
+# Windows: zipファイルを解凍
+cd slack-org-chart/
 ```
+
+### 方法B: Dockerインストール
+
+Dockerのみインストールされていれば使えます。追加の依存関係は不要です。
+
+```bash
+mkdir slack-org-chart && cd slack-org-chart
+docker pull ghcr.io/jogakdal/slack-org-chart:latest
+# config.yamlと.envをStep 3で設定してから実行します。
+```
+
 
 ## Step 2. Slackアプリ作成
 
@@ -88,46 +102,82 @@ pip install -r requirements.txt
 | `groups:write` | プライベートチャンネル作成・メンバー管理 |
 | `groups:read` | プライベートチャンネル一覧取得 |
 
-### 2-6. ワークスペースにインストール
+### 2-8. ワークスペースにインストール
 
 1. **"Install App"** で **"Install to Workspace"** をクリック
-2. インストール後、**Bot User OAuth Token** (`xoxb-...`) をコピー
+2. 管理者の承認が必要な場合は承認を待ちます。
+3. インストール後、**Bot User OAuth Token** (`xoxb-...`) をコピー
 
-### 2-7. Signing Secret確認
+### 2-9. Signing Secret確認
 
 **"Basic Information"** → **"App Credentials"** で **Signing Secret** をコピーします。
 
 ## Step 3. 設定
 
-### 方法A: 対話式セットアップ（推奨）
-
-```bash
-source venv/bin/activate
-python app.py setup
-```
-
-組織情報、LDAP接続情報、Slackトークン、言語を対話形式で入力すると `config.yaml` と `.env` が自動生成されます。
-
-### 方法B: 手動設定
+### 方法A: 手動設定（バイナリ/Docker）
 
 ```bash
 cp config.example.yaml config.yaml
 cp .env.example .env
 ```
 
-各ファイルを直接編集します。設定項目は `config.example.yaml` を参照してください。
+`config.yaml` と `.env` を編集します。`.env` にはStep 2でコピーしたSlackトークンとLDAP接続情報を入力します。
 
-## Step 4. 実行
+```env
+# Slack
+SLACK_BOT_TOKEN=xoxb-...
+SLACK_SIGNING_SECRET=...
+SLACK_APP_TOKEN=xapp-...
 
-```bash
-./run.sh start     # 起動
-./run.sh status    # 状態確認
-./run.sh log       # ログ確認
-./run.sh restart   # 再起動
-./run.sh stop      # 停止
+# LDAP
+LDAP_HOST=ldap.company.com
+LDAP_PORT=389
+LDAP_BIND_DN=cn=readonly,dc=company,dc=com
+LDAP_BIND_PASSWORD=your-password
+LDAP_BASE_DN=DC=company,DC=com
+LDAP_USER_BASE_DN=OU=Users,DC=company,DC=com
 ```
 
-## Step 5. テスト
+
+## Step 4. LDAPスキーマ確認
+
+デフォルトのAD属性マッピングはほとんどのAD環境で動作します。会社のADが異なる属性名を使用している場合は `config.yaml` の `ldap.attr_map` を修正してください。
+
+## Step 5. 実行
+
+### バイナリ
+
+```bash
+./run.sh start                        # 起動
+./run.sh start --auto-start=true      # 起動 + サーバー再起動時に自動起動
+./run.sh status                       # 状態確認
+./run.sh log                          # ログ確認
+./run.sh restart                      # 再起動
+./run.sh stop                         # 停止
+```
+
+### Docker
+
+```bash
+docker run -d --name slack-org-chart \
+  --restart always \
+  --env-file .env \
+  -v $(pwd)/config.yaml:/app/config.yaml \
+  -v $(pwd)/concurrent.json:/app/concurrent.json \
+  ghcr.io/jogakdal/slack-org-chart:latest
+```
+
+`--restart always` でサーバー再起動時に自動起動されます。
+
+```bash
+docker logs -f slack-org-chart        # ログ確認
+docker restart slack-org-chart        # 再起動
+docker stop slack-org-chart           # 停止
+```
+
+初回起動時にLDAPから全データをロードします（約5〜10秒）。その後、Slackで `/orgchart` または `/whois` が使用可能になります。
+
+## Step 6. テスト
 
 Slackで以下のコマンドを実行します。
 
@@ -167,6 +217,8 @@ titles:
   mode: "none"
 ```
 
+フィルタリングルール、キャッシュ周期などは `config.example.yaml` を参照してください。
+
 ## トラブルシューティング
 
 | 症状 | 解決方法 |
@@ -175,3 +227,5 @@ titles:
 | LDAP接続失敗 | `.env` のLDAPホスト/ポート/認証情報を確認 |
 | Slack接続エラー | Slackトークンを確認。App-Level Tokenを再発行 |
 | 社員が表示されない | `LDAP_USER_BASE_DN` が正しいOUを指しているか確認 |
+| 古いデータが表示される | アプリを再起動するか自動更新を待つ |
+| ボットの応答が重複する | `./run.sh stop` 後 `./run.sh start` でゾンビプロセスを整理 |

@@ -8,18 +8,31 @@ This guide walks you through setting up the Org Chart Slack App for your organiz
 
 - **LDAP/AD server** with a read-only service account
 - **Slack workspace** with admin access to install apps
-- **Python 3.9+** on the machine where the app will run
 - Network access from the app to both the LDAP server and the internet (Slack API)
 
-## Step 1. Clone and Install
+## Step 1. Install App Server
+
+Choose one of the following methods.
+
+### Method A: Binary Install (Recommended)
+
+Download the package for your OS from [Releases](https://github.com/jogakdal/slack-org-chart/releases). No Python installation required.
 
 ```bash
-git clone <repository-url>
-cd org-chart
+tar xzf slack-org-chart-linux.tar.gz   # Linux
+tar xzf slack-org-chart-macos.tar.gz   # macOS
+# Windows: extract the zip file
+cd slack-org-chart/
+```
 
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+### Method B: Docker Install
+
+Only Docker is required. No additional dependencies needed.
+
+```bash
+mkdir slack-org-chart && cd slack-org-chart
+docker pull ghcr.io/jogakdal/slack-org-chart:latest
+# Configure config.yaml and .env in Step 3 before running.
 ```
 
 ## Step 2. Create a Slack App
@@ -107,95 +120,65 @@ Go to **"Slash Commands"** and create two commands:
 
 ## Step 3. Configure
 
-### Option A: Interactive Setup (Recommended)
-
-```bash
-source venv/bin/activate
-python app.py setup
-```
-
-This will guide you through entering:
-- Organization info (name, LDAP root OU, email domain)
-- LDAP connection details (with connection test)
-- Slack tokens (with connection test)
-- Language selection (ko/en/ja/zh)
-- Visible title/position list
-
-It automatically creates `config.yaml` and `.env`.
-
-### Option B: Manual Setup
-
 ```bash
 cp config.example.yaml config.yaml
 cp .env.example .env
 ```
 
-Edit `config.yaml`:
-```yaml
-language: en                          # ko, en, ja, zh
+Edit `config.yaml` and `.env`. Enter the Slack tokens and LDAP connection details from Step 2 into `.env`.
 
-org:
-  root_ou: "YOUR_ROOT_OU"            # e.g., "COMPANY"
-  display_name: "Your Company"
-  email_domain: "company.com"
-
-titles:
-  mode: "whitelist"
-  list:
-    - "Manager"
-    - "Director"
-    - "VP"
-    - "CEO"
-```
-
-Edit `.env`:
 ```env
-SLACK_BOT_TOKEN=xoxb-...             # From Step 2-6
-SLACK_SIGNING_SECRET=...              # From Step 2-7
-SLACK_APP_TOKEN=xapp-...              # From Step 2-2
+# Slack
+SLACK_BOT_TOKEN=xoxb-...
+SLACK_SIGNING_SECRET=...
+SLACK_APP_TOKEN=xapp-...
 
+# LDAP
 LDAP_HOST=ldap.company.com
 LDAP_PORT=389
 LDAP_BIND_DN=cn=readonly,dc=company,dc=com
 LDAP_BIND_PASSWORD=your-password
 LDAP_BASE_DN=DC=company,DC=com
-LDAP_USER_BASE_DN=OU=YOUR_ROOT_OU,DC=company,DC=com
+LDAP_USER_BASE_DN=OU=Users,DC=company,DC=com
 ```
 
 ## Step 4. LDAP Schema Check
 
-Before running, verify your LDAP attribute mapping. The defaults work for most AD environments:
-
-```yaml
-ldap:
-  attr_map:
-    name: "cn"                        # Employee name
-    display_name: "displayName"       # Display name
-    email: "mail"                     # Email address
-    department: "department"          # Department
-    title: "title"                    # Job title/position
-    description: "description"        # Description
-    company: "company"                # Company name
-    manager: "manager"                # Manager DN
-```
-
-If your AD uses different attribute names, update `config.yaml` accordingly.
+The default AD attribute mapping works for most AD environments. If your AD uses different attribute names, update `attr_map` in `config.yaml`.
 
 ## Step 5. Run
 
+### Binary
+
 ```bash
-./run.sh start     # Start the app
-./run.sh status    # Check status
-./run.sh log       # View logs
-./run.sh restart   # Restart
-./run.sh stop      # Stop
+./run.sh start                        # Start
+./run.sh start --auto-start=true      # Start + auto-start on server reboot
+./run.sh status                       # Check status
+./run.sh log                          # View logs
+./run.sh restart                      # Restart
+./run.sh stop                         # Stop
 ```
 
-On first start, the app will:
-1. Load all employees from LDAP (~5-10 seconds)
-2. Load the OU tree structure
-3. Fetch Slack user list for active/inactive mapping
-4. Connect to Slack via WebSocket
+### Docker
+
+```bash
+docker run -d --name slack-org-chart \
+  --restart always \
+  --env-file .env \
+  -v $(pwd)/config.yaml:/app/config.yaml \
+  -v $(pwd)/concurrent.json:/app/concurrent.json \
+  ghcr.io/jogakdal/slack-org-chart:latest
+```
+
+`--restart always` ensures the container auto-starts on server reboot.
+
+```bash
+docker logs -f slack-org-chart        # View logs
+docker restart slack-org-chart        # Restart
+docker stop slack-org-chart           # Stop
+```
+
+On first start, the app loads all data from LDAP (~5-10 seconds), then you can use `/orgchart` or `/whois` in Slack.
 
 ## Step 6. Test
 

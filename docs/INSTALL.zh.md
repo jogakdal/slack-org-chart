@@ -8,19 +8,33 @@
 
 - 具有只读服务账号的 **LDAP/AD 服务器**
 - 具有应用安装权限的 **Slack 工作区**
-- 运行应用的机器上安装 **Python 3.9+**
 - 应用需要同时访问 LDAP 服务器和互联网（Slack API）
 
-## Step 1. 克隆和安装
+## Step 1. 安装应用服务器
+
+从以下两种方式中选择一种。
+
+### 方法 A：二进制安装（推荐）
+
+从 [Releases](https://github.com/jogakdal/slack-org-chart/releases) 下载适合您操作系统的安装包。无需安装 Python。
 
 ```bash
-git clone <repository-url>
-cd org-chart
-
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+tar xzf slack-org-chart-linux.tar.gz   # Linux
+tar xzf slack-org-chart-macos.tar.gz   # macOS
+# Windows: 解压 zip 文件
+cd slack-org-chart/
 ```
+
+### 方法 B：Docker 安装
+
+只需安装 Docker 即可使用，无需其他依赖。
+
+```bash
+mkdir slack-org-chart && cd slack-org-chart
+docker pull ghcr.io/jogakdal/slack-org-chart:latest
+# 在 Step 3 中配置 config.yaml 和 .env 后再运行。
+```
+
 
 ## Step 2. 创建 Slack 应用
 
@@ -88,46 +102,82 @@ pip install -r requirements.txt
 | `groups:write` | 创建私有频道及管理成员 |
 | `groups:read` | 查询私有频道 |
 
-### 2-6. 安装到工作区
+### 2-8. 安装到工作区
 
 1. 在 **"Install App"** 中点击 **"Install to Workspace"**
-2. 安装完成后复制 **Bot User OAuth Token** (`xoxb-...`)
+2. 如需管理员审批，请等待审批通过。
+3. 安装完成后复制 **Bot User OAuth Token** (`xoxb-...`)
 
-### 2-7. 获取 Signing Secret
+### 2-9. 获取 Signing Secret
 
 在 **"Basic Information"** → **"App Credentials"** 中复制 **Signing Secret**。
 
 ## Step 3. 配置
 
-### 方法 A：交互式设置（推荐）
-
-```bash
-source venv/bin/activate
-python app.py setup
-```
-
-按提示输入组织信息、LDAP 连接信息、Slack 令牌和语言，将自动生成 `config.yaml` 和 `.env`。
-
-### 方法 B：手动配置
+### 方法 A：手动配置（二进制/Docker）
 
 ```bash
 cp config.example.yaml config.yaml
 cp .env.example .env
 ```
 
-直接编辑各文件。配置项说明请参考 `config.example.yaml`。
+编辑 `config.yaml` 和 `.env`。在 `.env` 中输入 Step 2 中复制的 Slack 令牌和 LDAP 连接信息。
 
-## Step 4. 运行
+```env
+# Slack
+SLACK_BOT_TOKEN=xoxb-...
+SLACK_SIGNING_SECRET=...
+SLACK_APP_TOKEN=xapp-...
 
-```bash
-./run.sh start     # 启动
-./run.sh status    # 查看状态
-./run.sh log       # 查看日志
-./run.sh restart   # 重启
-./run.sh stop      # 停止
+# LDAP
+LDAP_HOST=ldap.company.com
+LDAP_PORT=389
+LDAP_BIND_DN=cn=readonly,dc=company,dc=com
+LDAP_BIND_PASSWORD=your-password
+LDAP_BASE_DN=DC=company,DC=com
+LDAP_USER_BASE_DN=OU=Users,DC=company,DC=com
 ```
 
-## Step 5. 测试
+
+## Step 4. LDAP 模式确认
+
+默认的 AD 属性映射适用于大多数 AD 环境。如果贵公司的 AD 使用不同的属性名，请修改 `config.yaml` 中的 `ldap.attr_map`。
+
+## Step 5. 运行
+
+### 二进制
+
+```bash
+./run.sh start                        # 启动
+./run.sh start --auto-start=true      # 启动 + 服务器重启时自动启动
+./run.sh status                       # 查看状态
+./run.sh log                          # 查看日志
+./run.sh restart                      # 重启
+./run.sh stop                         # 停止
+```
+
+### Docker
+
+```bash
+docker run -d --name slack-org-chart \
+  --restart always \
+  --env-file .env \
+  -v $(pwd)/config.yaml:/app/config.yaml \
+  -v $(pwd)/concurrent.json:/app/concurrent.json \
+  ghcr.io/jogakdal/slack-org-chart:latest
+```
+
+使用 `--restart always` 可在服务器重启时自动启动。
+
+```bash
+docker logs -f slack-org-chart        # 查看日志
+docker restart slack-org-chart        # 重启
+docker stop slack-org-chart           # 停止
+```
+
+首次启动时会从 LDAP 加载全部数据（约 5~10 秒），之后即可在 Slack 中使用 `/orgchart` 或 `/whois`。
+
+## Step 6. 测试
 
 在 Slack 中执行以下命令：
 
@@ -167,6 +217,8 @@ titles:
   mode: "none"
 ```
 
+筛选规则、缓存周期等请参考 `config.example.yaml`。
+
 ## 故障排除
 
 | 问题 | 解决方法 |
@@ -175,3 +227,5 @@ titles:
 | LDAP 连接失败 | 检查 `.env` 中的 LDAP 主机/端口/凭据 |
 | Slack 连接错误 | 检查 Slack 令牌；重新生成 App-Level Token |
 | 员工未显示 | 确认 `LDAP_USER_BASE_DN` 指向正确的 OU |
+| 显示旧数据 | 重启应用或等待自动刷新 |
+| 机器人回复重复 | 执行 `./run.sh stop` 后 `./run.sh start` 清理僵尸进程 |

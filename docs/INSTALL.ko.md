@@ -8,19 +8,33 @@
 
 - 읽기 전용 서비스 계정이 있는 **LDAP/AD 서버**
 - 앱 설치 권한이 있는 **Slack 워크스페이스**
-- 앱을 실행할 머신에 **Python 3.9+** 설치
 - 앱에서 LDAP 서버와 인터넷(Slack API)에 모두 접근 가능해야 합니다.
 
-## Step 1. 클론 및 설치
+## Step 1. 앱 서버 설치
+
+세 가지 방법 중 하나를 선택합니다.
+
+### 방법 A: 바이너리 설치 (권장)
+
+[Releases](https://github.com/jogakdal/slack-org-chart/releases) 에서 OS에 맞는 패키지를 다운로드합니다. Python 설치가 필요 없습니다.
 
 ```bash
-git clone <repository-url>
-cd org-chart
-
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+tar xzf slack-org-chart-linux.tar.gz   # Linux
+tar xzf slack-org-chart-macos.tar.gz   # macOS
+# Windows: zip 파일 압축 해제
+cd slack-org-chart/
 ```
+
+### 방법 B: Docker 설치
+
+Docker만 설치되어 있으면 됩니다. 별도 의존성이 필요 없습니다.
+
+```bash
+mkdir slack-org-chart && cd slack-org-chart
+docker pull ghcr.io/jogakdal/slack-org-chart:latest
+# config.yaml과 .env를 Step 3에서 설정한 후 실행합니다.
+```
+
 
 ## Step 2. Slack 앱 생성
 
@@ -103,23 +117,30 @@ pip install -r requirements.txt
 
 ## Step 3. 설정
 
-### 방법 A: 대화형 설정 (권장)
-
-```bash
-source venv/bin/activate
-python app.py setup
-```
-
-조직 정보, LDAP 접속 정보, Slack 토큰, 언어를 대화형으로 입력하면 `config.yaml`과 `.env`가 자동 생성됩니다. LDAP/Slack 연결 테스트도 자동으로 수행됩니다.
-
-### 방법 B: 수동 설정
+### 방법 A: 수동 설정 (바이너리/Docker)
 
 ```bash
 cp config.example.yaml config.yaml
 cp .env.example .env
 ```
 
-`config.yaml`과 `.env`를 직접 편집합니다. 설정 항목은 `config.example.yaml`을 참고하세요.
+`config.yaml`과 `.env`를 편집합니다. `.env`에는 Step 2에서 복사한 Slack 토큰과 LDAP 접속 정보를 입력합니다.
+
+```env
+# Slack
+SLACK_BOT_TOKEN=xoxb-...
+SLACK_SIGNING_SECRET=...
+SLACK_APP_TOKEN=xapp-...
+
+# LDAP
+LDAP_HOST=ldap.company.com
+LDAP_PORT=389
+LDAP_BIND_DN=cn=readonly,dc=company,dc=com
+LDAP_BIND_PASSWORD=your-password
+LDAP_BASE_DN=DC=company,DC=com
+LDAP_USER_BASE_DN=OU=Users,DC=company,DC=com
+```
+
 
 ## Step 4. LDAP 스키마 확인
 
@@ -127,12 +148,34 @@ cp .env.example .env
 
 ## Step 5. 실행
 
+### 바이너리
+
 ```bash
-./run.sh start     # 시작
-./run.sh status    # 상태 확인
-./run.sh log       # 로그 확인
-./run.sh restart   # 재시작
-./run.sh stop      # 종료
+./run.sh start                        # 시작
+./run.sh start --auto-start=true      # 시작 + 서버 재부팅 시 자동 시작
+./run.sh status                       # 상태 확인
+./run.sh log                          # 로그 확인
+./run.sh restart                      # 재시작
+./run.sh stop                         # 종료
+```
+
+### Docker
+
+```bash
+docker run -d --name slack-org-chart \
+  --restart always \
+  --env-file .env \
+  -v $(pwd)/config.yaml:/app/config.yaml \
+  -v $(pwd)/concurrent.json:/app/concurrent.json \
+  ghcr.io/jogakdal/slack-org-chart:latest
+```
+
+`--restart always`로 서버 재부팅 시 자동 시작됩니다.
+
+```bash
+docker logs -f slack-org-chart        # 로그 확인
+docker restart slack-org-chart        # 재시작
+docker stop slack-org-chart           # 종료
 ```
 
 첫 시작 시 LDAP에서 전체 데이터를 로드하며 (약 5~10초), 이후 Slack에서 `/orgchart` 또는 `/whois`를 사용할 수 있습니다.
@@ -142,9 +185,9 @@ cp .env.example .env
 Slack에서 아래 명령어를 실행합니다.
 
 - `/orgchart` — 조직도 보기
-- `/whois 홍길동` — 직원 검색
-- `/whois name:홍길동` — 필터 검색 (이름 필드에서만)
-- `/whois "홍길동"` — 정확한 매칭
+- `/whois 황용호` — 직원 검색
+- `/whois name:황용호` — 필터 검색 (이름 필드에서만)
+- `/whois "황용호"` — 정확한 매칭
 - `/orgchart help` — 도움말
 
 사용 가능한 필터: `name:` `nick:` `email:` `dept:` `phone:` `attr:`
