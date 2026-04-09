@@ -126,7 +126,7 @@ docker run -d --name slack-org-chart \
 `--restart always` 옵션으로 서버 재부팅 시 자동으로 앱이 시작됩니다. 별도의 systemd/launchd 설정이 필요 없습니다.
 
 ```bash
-docker logs -f slack-org-chart    # 로그 ���인
+docker logs -f slack-org-chart    # 로그 확인
 docker restart slack-org-chart    # 재시작
 docker stop slack-org-chart       # 종료
 ```
