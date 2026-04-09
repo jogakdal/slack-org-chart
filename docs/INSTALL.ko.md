@@ -192,6 +192,23 @@ Slack에서 아래 명령어를 실행합니다.
 
 사용 가능한 필터: `name:` `nick:` `email:` `dept:` `phone:` `attr:`
 
+## 업데이트
+
+### 바이너리
+
+App Home의 **앱 업데이트** 메뉴에서 새 버전 확인 및 자동 업데이트가 가능합니다. 업데이트 완료 후 앱이 자동으로 재시작됩니다.
+
+### Docker
+
+새 버전이 출시되면 App Home과 알림 채널에서 알림을 받을 수 있지만, **자동 업데이트는 지원되지 않습니다.** 서버에서 다음 명령을 실행하세요:
+
+```bash
+docker pull ghcr.io/jogakdal/slack-org-chart:latest
+docker restart slack-org-chart
+```
+
+완전 자동 업데이트가 필요하면 [Watchtower](https://containrrr.dev/watchtower/)를 사용하세요.
+
 ## 고급 설정
 
 초기 설정 후 `config.yaml`을 직접 편집하여 세부 조정할 수 있습니다.
