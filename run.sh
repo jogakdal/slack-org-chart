@@ -29,6 +29,7 @@ start() {
     fi
 
     cd "$APP_DIR" || exit 1
+    export APP_DIR
     if [ -f "$APP_DIR/venv/bin/activate" ]; then
         source venv/bin/activate
         PYTHONPATH="$APP_DIR"
@@ -47,22 +48,33 @@ start() {
     fi
 }
 
+
 stop() {
-    cleanup_zombies
     if [ -f "$PIDFILE" ]; then
         local pid
         pid=$(cat "$PIDFILE")
-        kill -9 "$pid" 2>/dev/null
+        if kill -0 "$pid" 2>/dev/null; then
+            # SIGTERM으로 graceful shutdown (종료 알림 전송)
+            kill -TERM "$pid" 2>/dev/null
+            # 최대 5초 대기
+            for i in 1 2 3 4 5; do
+                kill -0 "$pid" 2>/dev/null || break
+                sleep 1
+            done
+            # 아직 살아있으면 강제 종료
+            kill -9 "$pid" 2>/dev/null
+        fi
     fi
     rm -f "$PIDFILE"
-    sleep 2
-    # 혹시 남아있는 프로세스 재확인
+    sleep 1
     cleanup_zombies
     echo "종료됨."
 }
 
 restart() {
     echo "재시작 중..."
+    # 재시작임을 표시
+    touch "$APP_DIR/.restart_user"
     stop
     sleep 5
     start

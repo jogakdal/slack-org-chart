@@ -193,6 +193,19 @@ In Slack, try:
 
 Available filters: `name:` `nick:` `email:` `dept:` `phone:` `attr:`
 
+## LDAP Change Detection
+
+When LDAP data is refreshed (periodic sync or app restart), changes are automatically detected and sent to the alert channel.
+
+Detected changes:
+- ➕ New employee
+- ➖ Departed employee
+- 🔄 Department transfer
+- ✏️ Attribute changes (name, nickname, phone, searchable custom attributes)
+- 📁 Organization added/removed
+
+> Requires an alert channel to be configured. Set up via App Home → Alert Channel.
+
 ## Advanced Configuration
 
 After initial setup, you can fine-tune `config.yaml`:
