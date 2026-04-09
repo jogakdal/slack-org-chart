@@ -1,0 +1,168 @@
+# Slack-Org-Chart Configuration
+# Copy this file to config.yaml and modify as needed.
+
+# Language (ko: Korean, en: English, ja: Japanese, zh: Chinese)
+language: ko
+
+# Admin users (manage settings via Slack App Home)
+admin:
+  emails:
+    - "admin@company.com"
+
+# Organization
+org:
+  root_ou: "HUNET"                    # LDAP root OU name
+  display_name: "휴넷"                # Display name shown in org chart header
+  email_domain: "hunet.co.kr"         # Auto-appended domain for email account search
+  card_suffix: "님"                   # Default suffix in employee card when no honorific (e.g., "님", "さん"). Empty to disable.
+  list_suffix: ""                    # Default suffix in employee list when no honorific. Empty to disable.
+  default_avatar: ""                 # Default avatar URL for inactive employees. Empty to hide thumbnail.
+
+# LDAP AD attribute mapping (may differ by organization)
+ldap:
+  attr_map:
+    name: "cn"
+    display_name: "displayName"
+    email: "mail"
+    department: "department"
+    description: "description"
+    company: "company"
+    manager: "manager"
+
+# Employee attributes from AD
+# Each attribute is independently configurable with its own display/filter rules.
+#
+# Options per attribute:
+#   name   — Internal identifier (required)
+#   label  — Display label in employee card (required)
+#   attr   — AD attribute name (required). Leave empty ("") to disable.
+#   mode   — whitelist | blacklist | all | none
+#             whitelist: only show values in the list
+#             blacklist: hide values in the list, show everything else
+#             all: show all values as-is
+#             none: never show this field
+#   list   — Values for whitelist/blacklist mode
+#   format — plain (default) | concurrent ("Org1:Position1;Org2:Position2" notation)
+#   exclude_from_search — Values that exclude employees from search results
+employee_attrs:
+  - name: "position"
+    label: "직책"
+    attr: "title"
+    mode: "whitelist"
+    list:
+      - "유닛장"
+      - "팀장"
+      - "소장"
+      - "실장"
+      - "센터장"
+      - "본부장"
+      - "대표"
+      - "사장"
+
+  - name: "rank"
+    label: "직급"
+    attr: "extensionAttribute1"
+    mode: "all"
+
+  - name: "employment"
+    label: "고용형태"
+    attr: "employeeType"
+    mode: "all"
+    exclude_from_search:
+      - "외주"
+
+  - name: "job_function"
+    label: "직무"
+    attr: "extensionAttribute2"
+    mode: "all"
+
+  - name: "job_group"
+    label: "직군"
+    attr: "extensionAttribute3"
+    mode: "all"
+
+  - name: "mobile"
+    label: "휴대폰"
+    attr: "mobile"
+    mode: "all"
+
+  - name: "phone"
+    label: "내선번호"
+    attr: "telephoneNumber"
+    mode: "all"
+
+  # Concurrent positions (multiple assignments)
+  # Use format: "concurrent" to parse the notation: "Org1:Position1;Org2:Position2"
+  # Store this string in an AD extension attribute.
+  - name: "concurrent"
+    label: "겸직"
+    attr: "extensionAttribute10"
+    format: "concurrent"
+
+# Department attributes from AD OU
+# Similar to employee_attrs but for organizational units.
+# format: plain (default) | dn_to_name (converts DN to person name, e.g., managedBy)
+dept_attrs:
+  - name: "description"
+    label: "부서 설명"
+    attr: "description"
+
+  - name: "manager"
+    label: "부서장"
+    attr: "managedBy"
+    format: "dn_to_name"
+
+# Display settings
+# Controls how employee names and details are shown in cards and lists.
+# name_format uses template syntax: {field1|field2|fallback literal}
+# fields lists which attributes appear as detail lines below the name.
+display:
+  employee_card:
+    name_format:
+      default: "{name} {position|rank|님}"
+    fields:
+      - position
+      - rank
+      - employment
+      - job_function
+      - job_group
+      - mobile
+      - phone
+  employee_list:
+    name_format:
+      default: "{name} {position|rank}"
+    fields: []
+
+# Filtering
+filters:
+  # OUs with names starting with these prefixes are excluded
+  excluded_ou_prefixes:
+    - "("
+
+  # Exact account names to exclude (service/system accounts)
+  service_account_names:
+    - "syslog"
+    - "passcore"
+    - "commonsvc"
+    - "Work"
+    - "RPA Bottom Lane"
+    - "RPA Developer"
+    - "생성AI"
+    - "택배송장"
+
+  # Accounts whose name contains these keywords are excluded
+  service_account_keywords:
+    - "공용"
+    - "_PC계정"
+
+# Slash command names
+# Change these if they conflict with other apps in your workspace.
+# IMPORTANT: Must match the command names registered in your Slack app settings.
+commands:
+  orgchart: "/orgchart"
+  whois: "/whois"
+
+# Cache and refresh settings
+cache:
+  refresh_interval: 21300             # Memory data auto-refresh interval in seconds (default: 5h 55m)
+  slack_user_ttl: 21600               # Slack user list cache TTL in seconds (default: 6h)

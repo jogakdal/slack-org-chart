@@ -1,0 +1,8 @@
+services:
+  slack-org-chart:
+    image: ghcr.io/jogakdal/slack-org-chart:latest
+    restart: always
+    env_file: .env
+    volumes:
+      - ./config.yaml:/app/config.yaml
+      - ./concurrent.json:/app/concurrent.json
