@@ -43,6 +43,8 @@ docker pull ghcr.io/jogakdal/slack-org-chart:latest
 3. 输入 App Name 并选择工作区
    - 建议名称: `组织图` 或 `公司名 + 组织图`
 4. 点击 **"Create App"**
+5. (可选) 在 **"Basic Information"** → **"Display Information"** 中上传应用图标。
+   - 推荐 512x512px 以上的 PNG/JPG
 
 ### 2-1. Bot User 设置
 

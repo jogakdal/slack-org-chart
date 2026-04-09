@@ -42,6 +42,8 @@ docker pull ghcr.io/jogakdal/slack-org-chart:latest
 3. Enter an App Name and select your workspace
    - Recommended name: `Org Chart` or your organization name + `Org Chart`
 4. Click **"Create App"**
+5. (Optional) Go to **"Basic Information"** → **"Display Information"** to upload an app icon.
+   - Recommended: 512x512px or larger, PNG/JPG
 
 ### 2-1. Bot User
 

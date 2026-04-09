@@ -43,6 +43,8 @@ docker pull ghcr.io/jogakdal/slack-org-chart:latest
 3. App Nameを入力しワークスペースを選択
    - 推奨名: `組織図` または `組織名 + 組織図`
 4. **"Create App"** をクリック
+5. (任意) **"Basic Information"** → **"Display Information"** でアプリアイコンを登録します。
+   - 512x512px以上のPNG/JPG推奨
 
 ### 2-1. Bot User設定
 
