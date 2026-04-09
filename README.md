@@ -104,7 +104,8 @@ tar xzf slack-org-chart-linux.tar.gz
 cd slack-org-chart/
 cp config.example.yaml config.yaml    # 편집
 cp .env.example .env                  # Slack/LDAP 정보 입력
-./run.sh start
+./run.sh start                        # 시작
+./run.sh start --auto-start=true      # 시작 + 서버 재부팅 시 자동 시작
 ```
 
 ### Docker
@@ -122,8 +123,15 @@ docker run -d --name slack-org-chart \
   jogakdal/slack-org-chart:latest
 ```
 
-Docker Hub와 GitHub Container Registry 모두 사용 가능합니다:
-- `jogakdal/slack-org-chart:latest`
+`--restart always` 옵션으로 서버 재부팅 시 자동으로 앱이 시작됩니다. 별도의 systemd/launchd 설정이 필요 없습니다.
+
+```bash
+docker logs -f slack-org-chart    # 로그 ���인
+docker restart slack-org-chart    # 재시작
+docker stop slack-org-chart       # 종료
+```
+
+GitHub Container Registry에서 다운로드:
 - `ghcr.io/jogakdal/slack-org-chart:latest`
 
 ### 소스 설치
