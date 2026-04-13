@@ -114,32 +114,39 @@ docker pull ghcr.io/jogakdal/slack-org-chart:latest
 
 在 **"Basic Information"** → **"App Credentials"** 中复制 **Signing Secret**。
 
-## Step 3. 配置
+## Step 3. 初始设置 + 运行
 
-### 方法 A：手动配置（二进制/Docker）
+### 二进制
+
+通过交互式设置命令输入 Slack 令牌和管理员邮箱，即可自动生成 `.env` 和 `config.yaml`。
+
+```bash
+./run.sh install
+```
+
+设置完成后会询问是否启动应用。包括 LDAP 在内的其余设置可在应用启动后通过 Slack App Home 进行配置。
+
+> 也可以直接编辑 `.env` 文件进行设置。`./run.sh install` 可随时重新运行以更改配置值。
+
+### Docker
 
 ```bash
 cp config.example.yaml config.yaml
 cp .env.example .env
 ```
 
-编辑 `config.yaml` 和 `.env`。`.env` 中只需输入 Step 2 中复制的 Slack 令牌即可。LDAP 设置可以在应用启动后通过 App Home 进行配置。
+在 `.env` 中输入三个 Slack 令牌和管理员邮箱。
 
 ```env
-# Slack（必填）
 SLACK_BOT_TOKEN=xoxb-...
 SLACK_SIGNING_SECRET=...
 SLACK_APP_TOKEN=xapp-...
+ADMIN_EMAIL=admin@company.com
 ```
 
-> 也可以在 `.env` 中直接输入 LDAP 连接信息，但推荐通过 App Home 的 **LDAP(AD) 管理** 菜单进行设置。
+## Step 4. 运行（手动启动时）
 
-
-## Step 4. LDAP 模式确认
-
-默认的 AD 属性映射适用于大多数 AD 环境。如果贵公司的 AD 使用不同的属性名，请修改 `config.yaml` 中的 `ldap.attr_map`。
-
-## Step 5. 运行
+如果已通过 `./run.sh install` 启动，请跳过此步骤。
 
 ### 二进制
 
@@ -173,7 +180,7 @@ docker stop slack-org-chart           # 停止
 
 首次启动时会从 LDAP 加载全部数据（约 5~10 秒），之后即可在 Slack 中使用 `/orgchart` 或 `/whois`。
 
-## Step 6. 测试
+## Step 5. 测试
 
 在 Slack 中执行以下命令：
 

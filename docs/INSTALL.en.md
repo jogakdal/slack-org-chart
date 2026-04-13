@@ -120,29 +120,39 @@ Go to **"Slash Commands"** and create two commands:
 1. Go to **"Basic Information"**
 2. Under **"App Credentials"**, copy the **Signing Secret**
 
-## Step 3. Configure
+## Step 3. Setup + Run
+
+### Binary
+
+The interactive setup command lets you enter Slack tokens and admin email, then automatically generates `.env` and `config.yaml`.
+
+```bash
+./run.sh install
+```
+
+Once setup is complete, you will be asked whether to start the app. The remaining settings, including LDAP, can be configured from Slack App Home after the app starts.
+
+> You can also edit the `.env` file manually. `./run.sh install` can be re-run anytime to change values.
+
+### Docker
 
 ```bash
 cp config.example.yaml config.yaml
 cp .env.example .env
 ```
 
-Edit `config.yaml` and `.env`. You only need to enter the Slack tokens from Step 2 into `.env`. LDAP settings can be configured from App Home after starting the app.
+Enter the three Slack tokens and admin email in `.env`.
 
 ```env
-# Slack (required)
 SLACK_BOT_TOKEN=xoxb-...
 SLACK_SIGNING_SECRET=...
 SLACK_APP_TOKEN=xapp-...
+ADMIN_EMAIL=admin@company.com
 ```
 
-> You can also enter LDAP connection details directly in `.env`, but it is recommended to configure them from the **LDAP(AD) Management** menu in App Home.
+## Step 4. Run (Manual Start)
 
-## Step 4. LDAP Schema Check
-
-The default AD attribute mapping works for most AD environments. If your AD uses different attribute names, update `attr_map` in `config.yaml`.
-
-## Step 5. Run
+Skip this step if you already started the app via `./run.sh install`.
 
 ### Binary
 
@@ -176,7 +186,7 @@ docker stop slack-org-chart           # Stop
 
 On first start, the app loads all data from LDAP (~5-10 seconds), then you can use `/orgchart` or `/whois` in Slack.
 
-## Step 6. Test
+## Step 5. Test
 
 In Slack, try:
 - `/orgchart` — View the organization chart
