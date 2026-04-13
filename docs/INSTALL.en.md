@@ -127,22 +127,16 @@ cp config.example.yaml config.yaml
 cp .env.example .env
 ```
 
-Edit `config.yaml` and `.env`. Enter the Slack tokens and LDAP connection details from Step 2 into `.env`.
+Edit `config.yaml` and `.env`. You only need to enter the Slack tokens from Step 2 into `.env`. LDAP settings can be configured from App Home after starting the app.
 
 ```env
-# Slack
+# Slack (required)
 SLACK_BOT_TOKEN=xoxb-...
 SLACK_SIGNING_SECRET=...
 SLACK_APP_TOKEN=xapp-...
-
-# LDAP
-LDAP_HOST=ldap.company.com
-LDAP_PORT=389
-LDAP_BIND_DN=cn=readonly,dc=company,dc=com
-LDAP_BIND_PASSWORD=your-password
-LDAP_BASE_DN=DC=company,DC=com
-LDAP_USER_BASE_DN=OU=Users,DC=company,DC=com
 ```
+
+> You can also enter LDAP connection details directly in `.env`, but it is recommended to configure them from the **LDAP(AD) Management** menu in App Home.
 
 ## Step 4. LDAP Schema Check
 

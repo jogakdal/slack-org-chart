@@ -123,22 +123,16 @@ cp config.example.yaml config.yaml
 cp .env.example .env
 ```
 
-编辑 `config.yaml` 和 `.env`。在 `.env` 中输入 Step 2 中复制的 Slack 令牌和 LDAP 连接信息。
+编辑 `config.yaml` 和 `.env`。`.env` 中只需输入 Step 2 中复制的 Slack 令牌即可。LDAP 设置可以在应用启动后通过 App Home 进行配置。
 
 ```env
-# Slack
+# Slack（必填）
 SLACK_BOT_TOKEN=xoxb-...
 SLACK_SIGNING_SECRET=...
 SLACK_APP_TOKEN=xapp-...
-
-# LDAP
-LDAP_HOST=ldap.company.com
-LDAP_PORT=389
-LDAP_BIND_DN=cn=readonly,dc=company,dc=com
-LDAP_BIND_PASSWORD=your-password
-LDAP_BASE_DN=DC=company,DC=com
-LDAP_USER_BASE_DN=OU=Users,DC=company,DC=com
 ```
+
+> 也可以在 `.env` 中直接输入 LDAP 连接信息，但推荐通过 App Home 的 **LDAP(AD) 管理** 菜单进行设置。
 
 
 ## Step 4. LDAP 模式确认

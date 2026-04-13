@@ -123,22 +123,16 @@ cp config.example.yaml config.yaml
 cp .env.example .env
 ```
 
-`config.yaml` と `.env` を編集します。`.env` にはStep 2でコピーしたSlackトークンとLDAP接続情報を入力します。
+`config.yaml` と `.env` を編集します。`.env` にはStep 2でコピーしたSlackトークンのみ入力すれば大丈夫です。LDAP設定はアプリ起動後にApp Homeで行えます。
 
 ```env
-# Slack
+# Slack（必須）
 SLACK_BOT_TOKEN=xoxb-...
 SLACK_SIGNING_SECRET=...
 SLACK_APP_TOKEN=xapp-...
-
-# LDAP
-LDAP_HOST=ldap.company.com
-LDAP_PORT=389
-LDAP_BIND_DN=cn=readonly,dc=company,dc=com
-LDAP_BIND_PASSWORD=your-password
-LDAP_BASE_DN=DC=company,DC=com
-LDAP_USER_BASE_DN=OU=Users,DC=company,DC=com
 ```
+
+> LDAP接続情報を `.env` に直接入力することもできますが、App Homeの **LDAP(AD) 管理** メニューで設定することを推奨します。
 
 
 ## Step 4. LDAPスキーマ確認
