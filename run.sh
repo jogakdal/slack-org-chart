@@ -30,6 +30,7 @@ start() {
 
     cd "$APP_DIR" || exit 1
     export APP_DIR
+    unset SSL_CERT_FILE  # Nuitka 바이너리가 매 시작마다 새로 설정
     if [ -f "$APP_DIR/venv/bin/activate" ]; then
         source venv/bin/activate
         PYTHONPATH="$APP_DIR"
@@ -94,8 +95,13 @@ log() {
 }
 
 cleanup_zombies() {
-    # 이전에 남아있는 모든 관련 프로세스를 종료한다.
-    ps aux | grep "[P]ython app.py\|[p]ython app.py\|[s]lack-org-chart" | awk '{print $2}' | xargs kill -9 2>/dev/null
+    # 이전에 남아있는 모든 관련 프로세스를 종료한다. 자기 자신($$)과 부모는 제외.
+    local my_pid=$$
+    ps aux | grep "[P]ython app.py\|[p]ython app.py\|[s]lack-org-chart" \
+        | grep -v "run\.sh" \
+        | awk '{print $2}' \
+        | grep -v "^${my_pid}$" \
+        | xargs kill -9 2>/dev/null
 }
 
 is_running() {
